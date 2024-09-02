@@ -1,0 +1,151 @@
+{% extends 'main.html' %}
+{%block content%}
+{% if mytasks %}
+    <h3 class="text-center"><strong>My Tasks</strong></h3>
+        {% for task in mytasks %}
+            {{ task }} <br>
+        {% endfor %}
+        <br>
+{% endif %}
+{% if message %}
+        <p> {{message}} </p>
+{% endif %}
+{% if data|length %}
+    <form id="tasksDataForm" name="search_tasks_data" action="">
+        <input type="text" name="title" placeholder={%if search_query %}{{ search_query }}{%else%}"Search by title" {% endif %}>
+        <button type="submit">Search</button>
+    </form>
+
+    <h2 class="text-center"><strong>User Tasks</strong></h2>
+    <p> Number of tasks: {{ data|length }} </p>
+
+    <table id="taskDataTable" class="taskDataTable table table-bordered">
+            <thead>
+                <th class="s-no">S.no.</th>
+                <th class="title">Title
+                    <a href="?sort=title&order=asc{% if query %}&title={{ query }}{% endif %}">↑</a>
+                    <a href="?sort=title&order=desc{% if query %}&title={{ query }}{% endif %}">↓</a>
+                    <form method="get" action="">
+                    <select class="form-control title-form-select" id="title" name="title" value="{{request.GET.title}}" onchange="this.form.submit()">
+                        <option selected="" value="">Title</option>
+                        {% for item in filters.titles %}
+                        <option value="{{item}}" {% if request.GET.title == item %}selected{%endif%}>{{item}}</option>
+                        {% endfor %}
+                    </select>
+                    </form>
+                </th>
+                <th class="due_date">Due Date
+                    <a href="?sort=due_date&order=asc{% if query %}{{ query }}{% endif %}">↑</a>
+                    <a href="?sort=due_date&order=desc{% if query %}{{ query }}{% endif %}">↓</a>
+                    <form method="get" action="">
+                        <select class="form-control due-date-form-select" id="due_date" name="due_date" value="{{request.GET.due_date}}" onchange="this.form.submit()">
+                            <option selected="" value="">Due Date</option>
+                            {% for item in filters.due_dates %}
+                            <option value="{{item |date:"Y-m-d"}}" {% if request.GET.due_date == item %}selected{%endif%}>{{item |date:"Y-m-d"}}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </th>
+                {%if categories|length %}
+                <th class="category">
+                    <a href="?sort=category&order=asc{% if query %}{{ query }}{% endif %}">↑</a>
+                    <a href="?sort=category&order=desc{% if query %}{{ query }}{% endif %}">↓</a>
+                    <form method="get" action="">
+                    <select class="form-control category-form-select" id="category" name="category" value="{{request.GET.category}}" onchange="this.form.submit()">
+                        <option selected="" value="">Category</option>
+                        {% for item in filters.categories %}
+                        <option value="{{item}}" {% if request.GET.category == item %}selected{%endif%}>{{item}}</option>
+                        {% endfor %}
+                    </select>
+                    </form>
+                {% endif %}
+                </th>
+
+            </thead>
+            {% for key in data %}
+            <tr>
+                <td>{{forloop.counter}}</td>
+                <td>{{key.title}}</td>
+                <td>{{key.due_date}}</td>
+            </tr>
+            {% endfor %}
+    </table> 
+    <br>  
+{% endif %}
+        <button class="btn btn-sm btn-primary create_new_form" id="create_new_form" onclick="toggleForm()">Create my task</button>
+        <div class="container" id="showNewTaskForm" style="display: none;">
+            <br>
+            <form id="newTaskForm" action="" method="POST">
+                <div class="row task-form-row">
+                    <div class="col-xs-3">
+                        <label>Title</label>
+                    </div>
+                    <div class="col-xs-9">
+                        <input type="text" id="task_title" name="title" placeholder="Enter title" required>
+                    </div>
+                </div>
+                <br>
+                <div class="row task-form-row">
+                    <div class="col-xs-3">
+                        <label>Due Date</label>
+                    </div>
+                    <div class="col-xs-9">
+                        <input type="date" id="task_due_date" name="due_date" placeholder="Enter Due Date" required>
+                    </div>
+                </div>
+                <br>
+                <div class="row task-form-row">
+                    <div class="col-xs-3">
+                        <label>Category</label>
+                    </div>
+                    <div class="col-xs-9">
+                        <input type="text" id="task_category" name="category" placeholder="Enter Category">
+                    </div>
+                </div>
+                <div class="row task-form-row">
+                <span style="display:none" class="error">Please fill all the fields.</span>
+                <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+        <script>
+            function toggleForm() {
+                const form = document.getElementById('showNewTaskForm');
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            }
+            
+            function submitForm(){
+                formData = {
+                    'title':$('#task_title').val(),
+                    'due_date':$('#task_due_date').val(),
+                    'category':$('#task_category').val(),
+                }
+                $.ajax({
+                    url: '',
+                    type: 'POST',
+                    processData: false,
+                    data: JSON.stringify(formData),
+                    headers: {
+                        'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() // Include CSRF token if required
+                    },
+                    dataType: "json",
+                    headers: {'contentType':'application/json'},
+                    contentType : "application/json",
+                    success: function (res){
+                        window.scrollTo(0,0)
+                        var a = confirm("Form Saved Successfully")
+                        if (a) {
+                            window.location.href = '/';
+                        }
+                    },
+                    error: function (err) {
+                        alert(err)
+                    }
+                });
+            }
+            $(document).ready(function() {
+                $('#newTaskForm').on('submit', submitForm);
+            });
+        </script>
+{% endblock %}
