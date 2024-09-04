@@ -46,27 +46,20 @@
                         </select>
                     </form>
                 </th>
-                {%if categories|length %}
-                <th class="category">
-                    <a href="?sort=category&order=asc{% if query %}{{ query }}{% endif %}">↑</a>
-                    <a href="?sort=category&order=desc{% if query %}{{ query }}{% endif %}">↓</a>
-                    <form method="get" action="">
-                    <select class="form-control category-form-select" id="category" name="category" value="{{request.GET.category}}" onchange="this.form.submit()">
-                        <option selected="" value="">Category</option>
-                        {% for item in filters.categories %}
-                        <option value="{{item}}" {% if request.GET.category == item %}selected{%endif%}>{{item}}</option>
-                        {% endfor %}
-                    </select>
-                    </form>
-                {% endif %}
+                {%if filters.categories|length%}
+                <th>
+                    Category
                 </th>
-
+                {%endif%}
             </thead>
             {% for key in data %}
             <tr>
                 <td>{{forloop.counter}}</td>
                 <td>{{key.title}}</td>
                 <td>{{key.due_date}}</td>
+                {%if key.category_name %}
+                <td>{{key.category_name}}</td>
+                {%endif%}
             </tr>
             {% endfor %}
     </table> 
@@ -75,7 +68,7 @@
         <button class="btn btn-sm btn-primary create_new_form" id="create_new_form" onclick="toggleForm()">Create my task</button>
         <div class="container" id="showNewTaskForm" style="display: none;">
             <br>
-            <form id="newTaskForm" action="" method="POST">
+            <form>
                 <div class="row task-form-row">
                     <div class="col-xs-3">
                         <label>Title</label>
@@ -105,47 +98,41 @@
                 <div class="row task-form-row">
                 <span style="display:none" class="error">Please fill all the fields.</span>
                 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-                <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                <button onclick="submitTaskForm()" class="btn btn-primary">Save</button>
                 </div>
             </form>
         </div>
-        <script>
+
+        <script type="text/javascript">
             function toggleForm() {
                 const form = document.getElementById('showNewTaskForm');
                 form.style.display = form.style.display === 'none' ? 'block' : 'none';
             }
             
-            function submitForm(){
+            function submitTaskForm(){
                 formData = {
                     'title':$('#task_title').val(),
                     'due_date':$('#task_due_date').val(),
                     'category':$('#task_category').val(),
-                }
+                    'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val(),
+                };
                 $.ajax({
                     url: '',
                     type: 'POST',
                     processData: false,
                     data: JSON.stringify(formData),
                     headers: {
+                        "Content-Type":"application/json",
                         'X-CSRFToken': $('input[name="csrfmiddlewaretoken"]').val() // Include CSRF token if required
                     },
-                    dataType: "json",
-                    headers: {'contentType':'application/json'},
                     contentType : "application/json",
                     success: function (res){
-                        window.scrollTo(0,0)
-                        var a = confirm("Form Saved Successfully")
-                        if (a) {
-                            window.location.href = '/';
-                        }
+                        console.log("success")
                     },
                     error: function (err) {
                         alert(err)
                     }
                 });
             }
-            $(document).ready(function() {
-                $('#newTaskForm').on('submit', submitForm);
-            });
         </script>
 {% endblock %}

@@ -1,3 +1,4 @@
+from django.http.response import HttpResponse as HttpResponse
 from django.shortcuts import redirect, render
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout
@@ -7,8 +8,8 @@ from rest_framework.response import Response
 from rest_framework.renderers import TemplateHTMLRenderer
 from django.shortcuts import render, redirect
 
-from .serializers import TaskSerializer
-from .models import MyTaskList
+from .serializers import CategorySerializer, TaskSerializer
+from .models import Category, MyTaskList
 from rest_framework.parsers import JSONParser
 
 def login_view(request):
@@ -37,9 +38,6 @@ def register_view(request):
 
 class MyTaskView(viewsets.ModelViewSet):
     queryset = MyTaskList.objects.all()
-    renderer_classes = [TemplateHTMLRenderer]
-    template_name = "mytask.html"
-    parser_classes = (JSONParser,)
     serializer_class = TaskSerializer
 
     def list(self, request):
@@ -65,9 +63,19 @@ class MyTaskView(viewsets.ModelViewSet):
         else:
             message = 'No tasks for you. Please add one.'
         serializer = TaskSerializer(queryset, many=True)
-        filters['titles'] = list(allTasks.values_list('title', flat = True))
-        filters['due_dates'] = list(allTasks.values_list('due_date', flat = True))
-        filters['categories'] = list(allTasks.values_list('category', flat = True))
+        filters['titles'] = set(allTasks.values_list('title', flat = True))
+        filters['due_dates'] = set(allTasks.values_list('due_date', flat = True))
+        filters['categories'] = set(allTasks.values_list('category', flat = True))
         search_query = title
         query = f'&title={title}' if title else f'&due_date={due_date}' if due_date else None
         return (Response({'data':serializer.data, 'mytasks': mytasks, "message":message, "filters":filters, "query": query, "search_query":search_query }))
+    
+
+class CategoryView(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+class TaskView(MyTaskView):
+    renderer_classes = [TemplateHTMLRenderer]
+    template_name = "mytask.html"
+    parser_classes = (JSONParser,)
